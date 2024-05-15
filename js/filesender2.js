@@ -1,5 +1,26 @@
 const form = document.getElementById('upload-form');
 const fileList = document.getElementById('file-list');
+const updateForm = document.getElementById('update-form');
+const idField = document.getElementById('id-input');
+
+updateForm.addEventListener('submit', (event)=>{
+    event.preventDefault(); // Prevent default form submission
+    const newFileName = document.getElementById('text-input').value;
+    // Send the data using AJAX (Fetch API)
+    console.log('http://localhost:3000/update/'+idField.value+'/'+newFileName);
+    fetch('http://localhost:3000/update/'+idField.value+'/'+newFileName, {
+        method: 'GET'
+    }).then(response => response.json()) // Parse the response as JSON
+        .then(data => {
+            // Handle successful upload response and update the table
+            console.log('update successful:', data);
+            document.getElementById("name-"+idField.value).innerText = newFileName;
+
+
+        }).catch(error => {
+        console.error('update failed:', error); // Handle upload errors
+    })
+});
 
 form.addEventListener('submit', (event) => {
     event.preventDefault(); // Prevent default form submission
@@ -24,35 +45,49 @@ form.addEventListener('submit', (event) => {
             const newRow = document.createElement('tr');
             newRow.innerHTML = `
       <td>${data.data.id}</td>
-        <td>${data.data.filename}</td>
+        <td id="name-${data.data.id}">${data.data.filename}</td>
       <td>
-        <button class="btn btn-sm btn-warning edit-button" data-file-id="${data.data.id}">Modyfikuj</button>
-        <button class="btn btn-sm btn-danger delete-button" data-file-id="${data.data.id}">Usuń</button>
-        <button class="btn btn-sm btn-secondary download-button" data-file-id="${data.data.id}">Pobierz</button>
+        <button class="btn btn-sm btn-warning edit-button" data-file-id="${data.data.id}" id="edit${data.data.id}">Modyfikuj</button>
+        <button class="btn btn-sm btn-danger delete-button" data-file-id="${data.data.id}" id="delete${data.data.id}">Usuń</button>
+        <button class="btn btn-sm btn-secondary download-button" data-file-id="${data.data.id}" id="download${data.data.id}">Pobierz</button>
       </td>
     `;
             fileList.appendChild(newRow);
 
-            // Add event listeners for action buttons (optional, see comments)
-            // addEditButtonListeners();  // Call a function to add listeners
+            // Add event listeners for action buttons
+            const editButton = newRow.querySelector('.edit-button');
+            editButton.addEventListener('click', (event) => {
+                const fileId = event.target.dataset.fileId;
+                // Implement logic to handle editing a file based on fileId
+                console.log('Edit button clicked for file:', fileId);
+                // ... (Your edit functionality here)
+                idField.value = fileId;
+                updateForm.style.display = "block";
+            });
+
+
+
+            const deleteButton = newRow.querySelector('.delete-button');
+            deleteButton.addEventListener('click', (event) => {
+                const fileId = event.target.dataset.fileId;
+                // Send a delete request to the backend with fileId
+                console.log('Delete button clicked for file:', fileId);
+                // ... (Your delete request logic here)
+                fetch('http://localhost:3000/delete/'+fileId, {
+                    method: 'POST',
+                    body: formData
+                })
+            });
+
+            const downloadButton = newRow.querySelector('.download-button');
+            downloadButton.addEventListener('click', (event) => {
+                const fileId = event.target.dataset.fileId;
+                // Send a download request to the backend with fileId
+                console.log('Download button clicked for file:', fileId);
+                // ... (Your download request logic here)
+            });
         })
         .catch(error => {
             console.error('Upload failed:', error); // Handle upload errors
         });
 });
-
-// Function to add event listeners for action buttons (optional)
-function addEditButtonListeners() {
-    const editButtons = document.querySelectorAll('.edit-button');
-    editButtons.forEach(button => {
-        button.addEventListener('click', (event) => {
-            const fileId = event.target.dataset.fileId;
-            // Implement logic to handle editing a file based on fileId
-            console.log('Edit button clicked for file:', fileId);
-        });
-    });
-
-    // Similar logic for delete and download buttons
-}
-
-// Call the function

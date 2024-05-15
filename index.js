@@ -9,7 +9,6 @@ const S3 = new AWS.S3();
 const fs = require("fs");
 let bucketName = `file-bucket-pwr266886`;
 
-// import * as mysql from "mysql";
 //config mysql
 const mysql = require("mysql")
 const con = mysql.createConnection({
@@ -125,6 +124,25 @@ app.get('/getFile/:id', async (req, res) => {
             const data = await fileDownload(req.params.id);
             console.log(data);
             // testRetrieve(data.id);  // You can call testRetrieve here with the data
+            return res.status(200).json({message: 'Plik pobrany pomyślnie', data: data});
+
+        } catch (err) {
+            console.error("error: ", err);
+            return res.status(500).json({message: 'Błąd modyfikacji pliku'});
+        }
+    } else {
+        console.log("wrong format!");
+        res.status(400).json({message: 'Błąd! Wyślij plik ponownie'});
+    }
+});
+
+app.get('/getAllFiles', async (req, res) => {
+    console.log("getFile wykonywany ");
+    // console.log(req.params);
+    if (req.params.id) {
+        try {
+            const data = await getAllItems();
+            console.log(data);
             return res.status(200).json({message: 'Plik pobrany pomyślnie', data: data});
 
         } catch (err) {
@@ -261,8 +279,22 @@ async function fileDownload(id) {
     const databuffer = await S3.getObject(params).promise();
     console.log(databuffer);
     return databuffer;
+}
 
-
+async function getAllItems(){
+    const sql = "SELECT * FROM `files`";
+    const [results] = await new Promise((resolve, reject) => {
+        con.query(sql, function (err, result) {
+            if (err) reject(err);
+            console.log("retrieve:")
+            console.log(result);
+            resolve(result);
+        });
+    });
+    return results.map(file => ({
+        id: file.id,
+        filename: file.name
+    }));
 }
 
 app.listen(3000, () => console.log('Serwer uruchomiony na porcie 3000'));
