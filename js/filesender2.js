@@ -3,6 +3,7 @@ const fileList = document.getElementById('file-list');
 const updateForm = document.getElementById('update-form');
 const idField = document.getElementById('id-input');
 
+
 updateForm.addEventListener('submit', (event)=>{
     event.preventDefault(); // Prevent default form submission
     const newFileName = document.getElementById('text-input').value;
@@ -15,6 +16,7 @@ updateForm.addEventListener('submit', (event)=>{
             // Handle successful upload response and update the table
             console.log('update successful:', data);
             document.getElementById("name-"+idField.value).innerText = newFileName;
+            updateForm.style.display = "none";
 
 
         }).catch(error => {
@@ -43,6 +45,7 @@ form.addEventListener('submit', (event) => {
             console.log('Upload successful:', data);
 
             const newRow = document.createElement('tr');
+            newRow.id = "row-"+data.data.id
             newRow.innerHTML = `
       <td>${data.data.id}</td>
         <td id="name-${data.data.id}">${data.data.filename}</td>
@@ -74,8 +77,10 @@ form.addEventListener('submit', (event) => {
                 console.log('Delete button clicked for file:', fileId);
                 // ... (Your delete request logic here)
                 fetch('http://localhost:3000/delete/'+fileId, {
-                    method: 'POST',
-                    body: formData
+                    method: 'GET'
+                })
+                    .then(r => {
+                    document.getElementById("row-"+fileId).style.display = "hidden";
                 })
             });
 
@@ -85,9 +90,44 @@ form.addEventListener('submit', (event) => {
                 // Send a download request to the backend with fileId
                 console.log('Download button clicked for file:', fileId);
                 // ... (Your download request logic here)
+                fetch('http://localhost:3000/getFile/'+fileId, {
+                    method: 'GET'
+                }).then(response => response.json())
+                    .then(r => {
+                    console.log(r);
+                    downloadFileFromBuffer(r.data.Body.data, document.getElementById("name-"+fileId).textContent);
+
+                })
             });
+
         })
         .catch(error => {
             console.error('Upload failed:', error); // Handle upload errors
         });
 });
+
+
+function downloadFileFromBuffer(buffer, filename, mimeType = 'application/octet-stream') {
+    const arr = new Uint8Array(buffer);
+    console.log(arr);
+    // Create a Blob object from the buffer with the specified mimeType
+    const blob = new Blob([buffer], { type: mimeType });
+
+    // Create a temporary URL for the Blob
+    const url = window.URL.createObjectURL(blob);
+
+    // Create a link element
+    const link = document.createElement('a');
+
+    // Set the link's href attribute to the temporary URL
+    link.href = url;
+
+    // Set the link's download attribute to the desired filename
+    link.download = filename;
+
+    // Simulate a click on the link to trigger the download
+    link.click();
+
+    // Revoke the temporary URL to avoid memory leaks
+    window.URL.revokeObjectURL(url);
+}

@@ -60,6 +60,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         try {
             const data = await sendData(req.file);
             console.log("success ");
+            console.log(req.file);
             // testRetrieve(data.id);  // You can call testRetrieve here with the data
             return res.status(200).json({message: 'Plik przesłany pomyślnie', data});
 
@@ -160,6 +161,7 @@ async function sendData(filedata) {
     const params = {
         Bucket: bucketName, Key: filedata.originalname, Body: filedata.buffer
     };
+    console.log(params);
 
     try {
         const {Location} = await S3.upload(params).promise(); // Use promise() for async/await
@@ -199,7 +201,6 @@ async function deleteData(id) {
 
     try {
         await S3.deleteObject(params).promise(); // Use promise() for async/await
-        console.log(Location);
         const sql = "DELETE FROM `files` WHERE id = " + id + ";";
         return new Promise((resolve, reject) => {
             con.query(sql, function (err, result) {
@@ -250,8 +251,8 @@ async function updateData(id, newName) {
         return await new Promise((resolve, reject) => {
             con.query(sql2, function (err, result) {
                 if (err) reject(err);
-                console.log("record added id:" + result.insertId);
-                resolve({id: result.insertId, filename: newName, url: Location});
+                console.log("record updated id:" + result.updateId);
+                resolve({id: result.updateId, filename: newName, url: Location});
             });
         });
     } catch (err) {
@@ -272,11 +273,16 @@ async function fileDownload(id) {
         });
     });
 
+    // const databuffer = filedata.url;
     const params = {
         Bucket: bucketName, Key: filedata.name
     }
+    console.log()
     console.log(params);
     const databuffer = await S3.getObject(params).promise();
+    //res.attach
+    //res.type
+    //res.data
     console.log(databuffer);
     return databuffer;
 }
